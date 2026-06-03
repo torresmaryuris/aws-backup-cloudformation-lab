@@ -1,0 +1,34 @@
+[
+  {
+    "ParameterKey": "BackupVaultName",
+    "ParameterValue": "demo-backup-vault"
+  },
+  {
+    "ParameterKey": "BackupPlanName",
+    "ParameterValue": "demo-backup-plan"
+  },
+  {
+    "ParameterKey": "BackupSelectionName",
+    "ParameterValue": "demo-tag-based-backup-selection"
+  },
+  {
+    "ParameterKey": "BackupTagKey",
+    "ParameterValue": "Backup"
+  },
+  {
+    "ParameterKey": "BackupTagValue",
+    "ParameterValue": "Enabled"
+  },
+  {
+    "ParameterKey": "BackupScheduleExpression",
+    "ParameterValue": "cron(0 2 * * ? *)"
+  },
+  {
+    "ParameterKey": "DeleteAfterDays",
+    "ParameterValue": "35"
+  },
+  {
+    "ParameterKey": "MoveToColdStorageAfterDays",
+    "ParameterValue": "7"
+  }
+]
