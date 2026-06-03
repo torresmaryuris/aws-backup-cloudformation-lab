@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Demo AWS Backup configuration using CloudFormation.
+  This template creates a backup vault, backup plan, backup rule,
+  IAM role and tag-based backup selection for demonstration purposes.
+
+Parameters:
+  BackupVaultName:
+    Type: String
+    Default: demo-backup-vault
+    Description: Name of the AWS Backup Vault.
+
+  BackupPlanName:
+    Type: String
+    Default: demo-backup-plan
+    Description: Name of the AWS Backup Plan.
+
+  BackupSelectionName:
+    Type: String
+    Default: demo-tag-based-backup-selection
+    Description: Name of the AWS Backup Selection.
+
+  BackupTagKey:
+    Type: String
+    Default: Backup
+    Description: Tag key used to select resources for backup.
+
+  BackupTagValue:
+    Type: String
+    Default: Enabled
+    Description: Tag value used to select resources for backup.
+
+  BackupScheduleExpression:
+    Type: String
+    Default: cron(0 2 * * ? *)
+    Description: Backup schedule expression. Default runs daily at 02:00 UTC.
+
+  DeleteAfterDays:
+    Type: Number
+    Default: 35
+    Description: Number of days before recovery points are deleted.
+
+  MoveToColdStorageAfterDays:
+    Type: Number
+    Default: 7
+    Description: Number of days before recovery points are moved to cold storage.
+
+Resources:
+  DemoBackupVault:
+    Type: AWS::Backup::BackupVault
+    Properties:
+      BackupVaultName: !Ref BackupVaultName
+
+  DemoBackupServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: demo-aws-backup-service-role
+      Description: Demo IAM role used by AWS Backup to manage backup operations.
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - backup.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup
+        - arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForRestores
+
+  DemoBackupPlan:
+    Type: AWS::Backup::BackupPlan
+    Properties:
+      BackupPlan:
+        BackupPlanName: !Ref BackupPlanName
+        BackupPlanRule:
+          - RuleName: demo-daily-backup-rule
+            TargetBackupVault: !Ref DemoBackupVault
+            ScheduleExpression: !Ref BackupScheduleExpression
+            StartWindowMinutes: 60
+            CompletionWindowMinutes: 180
+            Lifecycle:
+              MoveToColdStorageAfterDays: !Ref MoveToColdStorageAfterDays
+              DeleteAfterDays: !Ref DeleteAfterDays
+            RecoveryPointTags:
+              Project: aws-backup-cloudformation-lab
+              Environment: demo
+              ManagedBy: cloudformation
+
+  DemoBackupSelection:
+    Type: AWS::Backup::BackupSelection
+    Properties:
+      BackupPlanId: !Ref DemoBackupPlan
+      BackupSelection:
+        SelectionName: !Ref BackupSelectionName
+        IamRoleArn: !GetAtt DemoBackupServiceRole.Arn
+        ListOfTags:
+          - ConditionType: STRINGEQUALS
+            ConditionKey: !Ref BackupTagKey
+            ConditionValue: !Ref BackupTagValue
+
+Outputs:
+  BackupVaultName:
+    Description: Name of the created backup vault.
+    Value: !Ref DemoBackupVault
+
+  BackupPlanId:
+    Description: ID of the created backup plan.
+    Value: !Ref DemoBackupPlan
+
+  BackupServiceRoleArn:
+    Description: IAM Role ARN used by AWS Backup.
+    Value: !GetAtt DemoBackupServiceRole.Arn
+
+  BackupSelectionName:
+    Description: Name of the tag-based backup selection.
+    Value: !Ref BackupSelectionName
